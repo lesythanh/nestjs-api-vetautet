@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Upload File</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.9.0/axios.min.js"></script>
+</head>
+<body>
+    <h1> Upload Large File </h1>
+    <input type="file" id="fileInput" multiple/>
+    <script>
+        const inputFile = document.querySelector('#fileInput');
+
+        //set chuck file size
+        const chuckSize = 1024 * 1024; // 140KB
+
+        inputFile.onchange = async function (){
+            //file[0] is the first file
+            const file = inputFile.files[0], chunks = [];
+            let startPos = 0;
+
+            while (startPos < file.size) {
+                chunks.push(file.slice(startPos, startPos + chuckSize));
+                startPos += chuckSize;
+            }
+
+            if (!chunks.length) {
+                return;
+            }
+
+            const fileNameRandom = Math.random().toString().slice(2, 7);
+            const chunkPromise = [];
+
+            chunks.map((ck, index) => {
+                const data = new FormData();
+                const nameFileFinal = fileNameRandom + '-' + file.name + '-' + index;
+
+                data.set("name", nameFileFinal);
+                data.append('files', ck);
+
+                //call api
+                // axios.post('http://localhost:3000/user/upload/large-file', data)
+                chunkPromise.push(axios.post('http://localhost:3000/user/upload/large-file', data));
+            });
+
+            //call api to merge files
+            await Promise.all(chunkPromise);
+            const rs = await axios.get('http://localhost:3000/user/merge/file?file=chunks-' + fileNameRandom + '-' + file.name,);
+
+            console.log("link full | ", rs);
+            
+        }
+    </script>
+</body>
+</html>
