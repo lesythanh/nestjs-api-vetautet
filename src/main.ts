@@ -9,9 +9,9 @@ async function bootstrap() {
   // const app = await NestFactory.create(AppModule);
   const app = await NestFactory.create<NestApplication>(AppModule, {
     // logger: new MyLogger(),
-    bufferLogs: true,
+    // bufferLogs: true,
   });
-  app.useLogger(app.get(MyLoggerDev));
+  app.useLogger(new MyLogger());
   app.useGlobalPipes(new ValidationPipe());
   //enable CORS
   app.enableCors();

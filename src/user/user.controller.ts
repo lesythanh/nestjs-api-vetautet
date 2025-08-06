@@ -10,10 +10,13 @@ import { storage } from './oss';
 import * as path from 'path';
 import * as fs from "fs"
 import { Response } from 'express';
+import { MyLogger } from 'src/logger/my.logger';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+
+  private logger = new MyLogger();
+  constructor(private readonly userService: UserService) { }
 
   @Get('merge/file')
   mergeFile(@Query("file") fileName: string, @Res() res: Response) {
@@ -29,20 +32,20 @@ export class UserController {
     const files = fs.readdirSync(nameDir);
 
     let startPos = 0, countFile = 0;
-    
-    files.map( file => {
+
+    files.map(file => {
       //get file path
       const filePath = nameDir + '/' + file;
       console.log('filePath |', filePath);
-      
+
       const streamFile = fs.createReadStream(filePath);
       streamFile.pipe(fs.createWriteStream('uploads/merge/' + fileName, {
-        start : startPos
+        start: startPos
       })).on('finish', () => {
         countFile++;
-        console.log('count File |',countFile);
-        if ( files.length === countFile) {
-          fs.rm(nameDir, { recursive: true }, () => {});
+        console.log('count File |', countFile);
+        if (files.length === countFile) {
+          fs.rm(nameDir, { recursive: true }, () => { });
         }
       });
 
@@ -61,7 +64,7 @@ export class UserController {
   @UseInterceptors(FilesInterceptor('files', 20, {
     dest: 'uploads',
   }))
-  uploadLargeFile(@UploadedFiles() files: Array<Express.Multer.File>, @Body() body: {name: string}) {
+  uploadLargeFile(@UploadedFiles() files: Array<Express.Multer.File>, @Body() body: { name: string }) {
     console.log('upload file body |', body);
     console.log('upload files |', files);
 
@@ -90,7 +93,7 @@ export class UserController {
     },
     fileFilter: (req, file, cb) => {
       const extName = path.extname(file.originalname);
-      if(['.jpg', '.jpeg', '.png', '.gif'].includes(extName)) {
+      if (['.jpg', '.jpeg', '.png', '.gif'].includes(extName)) {
         cb(null, true);
       } else {
         cb(new BadRequestException('upload file error'), false);
@@ -98,23 +101,24 @@ export class UserController {
     },
   }))
 
-  uploadFile(@UploadedFile() file: Express.Multer.File ) {
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
     console.log('upload file------->', file.path);
-    
+
     return file.path;
   }
 
   @Post('login')
   login(@Body() loginUserDto: LoginUserDto) {
-    console.log( loginUserDto);
-    
+    console.log(loginUserDto);
+
     return this.userService.login(loginUserDto);
   }
 
   @Post('new')
   register(@Body() registerUserDto: RegisterUserDto) {
-    console.log( registerUserDto);
-    
+    // console.log(registerUserDto);
+    this.logger.log('Register User', registerUserDto.accountname);
+
     return this.userService.register(registerUserDto);
   }
 
